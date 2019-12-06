@@ -1,43 +1,66 @@
-#!/bin/bash
+#!/bin/sh
 
-# Update package lists
-apt-get update
+# Install development dependencies
+apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS \
+    curl-dev \
+    imagemagick-dev \
+    libtool \
+    libxml2-dev \
+    postgresql-dev \
+    sqlite-dev
 
-# Install basic command line tools
-apt-get install -y \
+# Install production dependencies
+apk add --no-cache \
+    bash \
     curl \
-    zip \
-    unzip \
+    g++ \
+    gcc \
     git \
-    software-properties-common
+    imagemagick \
+    libc-dev \
+    libpng-dev \
+    make \
+    mysql-client \
+    nodejs \
+    nodejs-npm \
+    yarn \
+    openssh-client \
+    postgresql-libs \
+    rsync \
+    zlib-dev \
+    libzip-dev \
+    sqlite
 
-# Add the ondrej/php repository to install php.
-add-apt-repository -y ppa:ondrej/php
+# Install PECL and PEAR extensions
+pecl install \
+    imagick \
+    xdebug
 
-# Update package lists
-apt-get update
+# Install and enable php extensions
+docker-php-ext-enable \
+    imagick \
+    xdebug
 
-# Install php modules
-apt-get install -y \
-    php7.3-fpm \
-    php7.3-cli \
-    php7.3-gd \
-    php7.3-mysql \
-    php7.3-imap \
-    php7.3-json \
-    php7.3-mbstring \
-    php7.3-xml \
-    php7.3-curl \
-    php7.3-bcmath \
-    php-memcached \
+docker-php-ext-configure zip --with-libzip
 
-# Install Composer
-php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer
+docker-php-ext-install \
+    curl \
+    iconv \
+    mbstring \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    pdo_sqlite \
+    pcntl \
+    tokenizer \
+    xml \
+    gd \
+    zip \
+    bcmath
 
-# Add php run file for php-fpm
-mkdir /run/php
-
-# Clean up
-apt-get remove -y --purge software-properties-common
-apt-get clean
-rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# Install composer
+export COMPOSER_HOME=/composer
+export PATH=./vendor/bin:/composer/vendor/bin:$PATH
+export COMPOSER_ALLOW_SUPERUSER=1
+curl -s https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ --filename=composer
